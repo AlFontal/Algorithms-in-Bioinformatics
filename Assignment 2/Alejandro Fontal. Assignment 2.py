@@ -184,12 +184,44 @@ def fasta_parse(filename):
     fastaFile.close()
     return names, seqs
 
+def complement_seq(fwd_seqs):
+    """
+    Function that takes a DNA sequence as input and outputs its complementary.
+
+    :param fwd_seqs: list of DNA sequence in the forward sense.
+    :return: rvs_seqs: list of the same DNA sequences in the reverse sense.
+    """
+    rvs_seqs = []
+    for seq_idx, seq in enumerate(fwd_seqs):    #for every sequence in list
+
+        currentSeq = []
+        rvs_seqs.append(currentSeq)
+        for char_idx, char in enumerate(seq): #for every character in sequence
+
+            if seq[char_idx] == "A":
+                currentSeq.append("T")
+
+            elif seq[char_idx] == "T":
+                currentSeq.append("A")
+
+            elif seq[char_idx] == "G":
+                currentSeq.append("C")
+
+            elif seq[char_idx] == "C":
+                currentSeq.append("G")
+
+        rvs_seqs[seq_idx] = currentSeq  #update list with currentSeq
+        rvs_seqs[seq_idx] = rvs_seqs[seq_idx][::-1] #reverse the generated seq
+        rvs_seqs[seq_idx] = "".join(rvs_seqs[seq_idx]) # convert list to string
+    return rvs_seqs
+
 if __name__ == "__main__":
 
     # the code below should produce the results necessary to answer the questions
     # in other words, if we run your code, we should see the data that you used
     # to answer the questions
     start_time = time.time()
+
 
     #QUESTION 1:
 
@@ -198,6 +230,8 @@ if __name__ == "__main__":
     s2 = 'GTCAACTGCAACATGAGGAACATCGACAGGCCCAAGGTCTTCCT'
     s3 = 'GGATCCCCTGTCCTCTCTGTCACATA'
     seqs = [s1, s2, s3]
+
+
 
     hash = generate_hash_table(seqs, 2)
     print "The generated hash table is: \n"
@@ -239,6 +273,7 @@ if __name__ == "__main__":
             " of " + str(total_length) + " bp. \nThere is a total of " +
            str(len(names)) + " sequences.")
 
+    print (time.time() - start_time)
 
 
     #QUESTION 5:
@@ -275,6 +310,33 @@ if __name__ == "__main__":
         if max(map(len,maxmatch)) < 15:
             print("\nNone of the 15-mers of " + query_name[n]+
                   " match with the 15-mers in the hash table")
+
+
+    #OPTIONAL PART:
+
+    query_seqs = complement_seq(query_seqs)
+
+    n= -1
+    for query in query_seqs:
+        n += +1
+        hits = get_hits(query, hash, 15)
+        maxmatch, seq_coords, query_coords = get_longest_match(hits)
+        for match in maxmatch:
+            if len(match) > 15:
+                print("The longest match for query " + query_name[n] +
+                      " in the reversed direction is found in Chromosome " +
+                      str(seq_coords[0][0] + 1) +
+                      " from bp " + str(seq_coords[0][1]) + " to bp " +
+                      str(seq_coords[0][2]) + " so a total stretch of " +
+                      str(seq_coords[0][2] - seq_coords[0][1]) + " bp.")
+                print("\nThe matching sequence is the following:")
+                print(match)
+        if max(map(len,maxmatch)) < 15:
+            print("\nNone of the 15-mers of " + query_name[n]+
+                  " match with the 15-mers in the hash table")
+
+
+
 
 
     print (time.time() - start_time)
