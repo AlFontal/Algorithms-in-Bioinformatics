@@ -5,7 +5,7 @@ Author: Alejandro Fontal
 Student nr: 920110242090
 Script to: Assignment 3. Finding Eulerian paths and cycles.
 """
-
+import random
 # Implement your functions here
 
 
@@ -21,7 +21,9 @@ def get_degree(node, graph):
     if type(graph) is dict:
 
         indegree = [i[j] for i in graph.values() for j in range(len(i))]
+        # The times a node appears in the values equals the inbound edges
         outdegree = len(graph[node])
+        # The number of values per node equals the outbound edges
         degree = indegree.count(node) - outdegree
 
         return degree
@@ -33,6 +35,7 @@ def get_degree(node, graph):
         degree = indegree.count(node) - outdegree.count(node)
 
         return degree
+
 
 def is_eulerian(graph):
     """
@@ -122,7 +125,7 @@ def rotate(cycle, element):
     """
 
     idx = cycle.index(element)
-    if idx == 0:
+    if idx == 0:  # If the element is already the first, no need to rotate.
         return cycle
     else:
         return cycle[idx:] + cycle[1:idx] + [element]
@@ -142,6 +145,7 @@ def join_cycles(cycle_1, cycle_2, element):
     prev = cycle_1[:idx]
     after = cycle_1[idx + 1:]
 
+    # Slice the previous list in two halves and add new cycle in between.
     new_cycle = prev + cycle_2 + after
 
     return new_cycle
@@ -173,6 +177,8 @@ def find_eulerian_cycle(graph):
     :return: List of the nodes followed by the cycle.
     """
 
+    # Check whether a solution is possible or not so that the while loop isn't
+    # stuck indefinitely.
     if not is_eulerian(graph):
         print "The selected graph is not Eulerian"
         return
@@ -180,28 +186,37 @@ def find_eulerian_cycle(graph):
     if type(graph) is dict:
         graph = get_edges(graph)
 
+
     cycles = {}
-    starting_node = graph[0][0]
+    starting_edge = random.choice(graph)
+    # Select a random node as the starting node
+    starting_node = starting_edge[0]
     current_node = starting_node
     cycles[0] = []
     cycles[0].append(starting_node)
     cyc_count = 0
     step_count = 0
 
-    while len(graph) > 0:   #len(graph) > 0 until all edges have been visited.
+    while len(graph) > 0:   # len(graph) > 0 until all edges have been visited.
 
         for edge in graph:
             if current_node == edge[0]:
+                # Iterate over the edges until finding one that brings the
+                # current node to another one.
                 current_node = edge[1]
+                # New current node will be the one the edge pointed to.
                 graph.remove(edge)
                 cycles[cyc_count].append(current_node)
                 step_count += 1
+                # Remove visited edge, add new node to list of nodes in cycle.
 
         if current_node == starting_node and step_count > 0 and len(graph) > 0:
-        #If this happens, a cycle has been completed, so get a new starting
-        #node, reset the steps counter and start searching for next cycle
+            # If this happens, a cycle has been completed, so get a new start
+            # node, reset the steps counter and start searching for next cycle
+
                 cyc_count += 1
-                current_node = graph[0][0]
+                starting_edge = random.choice(graph)
+                current_node = starting_edge[0]
                 step_count = 0
                 starting_node = current_node
                 cycles[cyc_count] = []
@@ -213,61 +228,83 @@ def find_eulerian_cycle(graph):
     for i in range(len(cycles)):
         cycles_list.append(cycles[i])
 
-    while len(cycles_list) > 1:
 
-        for idx, cycle in enumerate(cycles_list):
-            if idx < len(cycles_list) - 1:
+    while len(cycles_list) > 1:  # Repeat until all the cycles have joined
 
-                for i, node in enumerate(cycle):
-                    for j in range(1, len(cycles_list) - idx):
-                        if node in cycles_list[idx + j]:
-                            cycles_list[idx + j] = rotate(cycles_list[idx + j],
-                                                          node)
-                            cycles_list[idx] = join_cycles(cycles_list[idx],
-                                                           cycles_list[idx + j],
-                                                           node)
-                            del cycles_list[idx + j]
+        for idx, cycle in enumerate(cycles_list[0:len(cycles_list)-1]):
+            # Iterate between cycles except the last one
+            for i, node in enumerate(cycle):
+                # Iterate between nodes within a cycle
+                for j in range(1, len(cycles_list) - idx):
+                    # For the remaining non compared cycles
 
-    cycles_list = cycles_list[0]
+                    if node in cycles_list[idx + j]:
+                        # Check if node is in such cycle
 
-    nodes_list = []
+                        cycles_list[idx + j] = rotate(cycles_list[idx + j],
+                                                      node)
+                        # Rotate 2nd cycle in order to be able to join them
+                        joined_cycles = join_cycles(cycles_list[idx],
+                                                    cycles_list[idx + j],
+                                                    node)
 
-    for element in cycles_list:
-        if type(element) is list:
-            for node in element:
-                nodes_list.append(node)
-        else:
-            nodes_list.append(element)
+                        cycles_list[idx] = joined_cycles
+                        # Join cycles in new variable so they don't appear
+                        # as a list of lists.
+
+                        del cycles_list[idx + j]
+                        break
+                        # Delete copy of 2nd cycle, break inner for loop so
+                        # indexes don't go out of range.
+
+
+    nodes_list = cycles_list[0]
+    # Now we get rid of double list of lists
+
+
 
     return nodes_list
 
 
 def find_eulerian_path(graph):
     """
+    Finds an eulerian path within a graph
 
-    :param graph:
-    :return:
+    :param graph: Graph in the form of a dictionary or list of tuples.
+    :return: list containing the Eulerian path of nodes traversed
     """
     if is_eulerian(graph):
         cycle = find_eulerian_cycle(graph)
         path = cycle[1:]
         return path
+    # If graph is Eulerian, find a cycle and remove 1st element to make it path
 
     elif not has_eulerian_path(graph):
         print "The graph doesn't contain any Eulerian path"
         return
+    # If graph is both non Eulerian and has no Eulerian path, don't execute
+    # function because it would end up in infinite while loop.
+
 
     else:
         if type(graph) == dict:
             graph = get_edges(graph)
 
-        first_node, last_node, has_path = has_eulerian_path(graph, getNodes = True)
+        # Find which are the first and last nodes of the path
+        first_node, last_node, has_path = has_eulerian_path(graph,
+                                                            getNodes=True)
 
+        # Add edge between last node and first node
         new_edge = (last_node, first_node)
         graph.append(new_edge)
 
+        # Treat the problem as a finding a cycle problem
         cycle = find_eulerian_cycle(graph)
+
+        # Rotate the cycle so that it ends and starts in the last node
         cycle = rotate(cycle, last_node)
+
+        # The Eulerian path will be the Eulerian cycle minus the first step
         path = cycle[1:]
 
     return path
@@ -275,9 +312,10 @@ def find_eulerian_path(graph):
 
 def spectrum_to_graph(spectrum, edges = False):
     """
-
+    Takes a spectrum of lmers and makes a graph out of it.
     :param spectrum: list of lmers
-    :return:
+    :return: a graph in the form of a dictionary which contains the lmers as
+    edges and the l-1-mers as nodes.
     """
 
     graph = {}
@@ -298,6 +336,12 @@ def spectrum_to_graph(spectrum, edges = False):
         return graph
 
 def path_to_seq(path):
+    """
+    Takes a path of l-1-mers as input and outputs a DNA sequence in a string.
+
+    :param path: List of
+    :return:
+    """
 
     seq = []
     for idx,node in enumerate(path):
@@ -378,8 +422,9 @@ for k,v in graph.items():
 
 # Question 6
 print "\nQUESTION 6 \n"
-print is_eulerian(graph)
-print has_eulerian_path(graph)
+print("It is " + str(is_eulerian(graph)) + " that the graph is Eulerian")
+print("It is " + str(has_eulerian_path(graph)) + " that the graph has an"
+      " Eulerian path")
 
 # Question 7
 print "\nQUESTION 7 \n"
